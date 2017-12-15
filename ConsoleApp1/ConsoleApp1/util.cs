@@ -6,6 +6,7 @@ namespace ConsoleApp1
 {
     class util
     {
+        static String TAG="ConsoleApp1";
         public static System.Collections.Specialized.StringDictionary parseCommandLines(String [] args)
         {
             System.Collections.Specialized.StringDictionary ret = new System.Collections.Specialized.StringDictionary();
@@ -26,6 +27,10 @@ namespace ConsoleApp1
                 }
             }
             return ret; 
+        }
+        public static void logIt(String msg)
+        {
+            System.Diagnostics.Trace.WriteLine(string.Format("[{0}]: {1}", TAG, msg));
         }
     }
 }
