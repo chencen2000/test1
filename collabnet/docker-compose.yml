@@ -1,0 +1,11 @@
+version: '2.1'
+
+services:
+  svn:
+    image: mamohr/subversion-edge
+    ports:
+      - "3343:3343"
+      - "18080:18080"
+      - "4434:4434"
+    volumes:
+      - "/home/qa/svn:/opt/csvn/data"
