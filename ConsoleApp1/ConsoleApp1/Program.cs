@@ -1,4 +1,5 @@
-﻿using System;
+﻿using StackExchange.Redis;
+using System;
 
 namespace ConsoleApp1
 {
@@ -9,7 +10,8 @@ namespace ConsoleApp1
             System.Collections.Specialized.StringDictionary _args = util.parseCommandLines(args);
             //System.Tuple<Boolean,int,String[]> ret=util.runExe("cmd.exe", "/c dir");
             Console.WriteLine("Hello World!");
-            test();
+            //test();
+            test_redis();
         }
 
         static void test()
@@ -19,6 +21,18 @@ namespace ConsoleApp1
             {
 
             }
+        }
+
+        static void test_redis()
+        {
+            ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("localhost");
+            IDatabase db = redis.GetDatabase();
+            if(!db.KeyExists("mykey"))
+            {
+                db.StringSet("mykey", "init_value");
+            }
+            string value = db.StringGet("mykey");
+            
         }
     }
 }
