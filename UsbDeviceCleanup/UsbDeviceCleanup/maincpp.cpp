@@ -37,6 +37,11 @@ int start_service(System::Collections::Specialized::StringDictionary^ args, Syst
     System::Diagnostics::PerformanceCounter^ pc = gcnew System::Diagnostics::PerformanceCounter("Processor", "% Processor Time", "_Total");
     float cpu_usage = pc->NextValue();
     bool done = FALSE;
+    int method = 1;
+    if (args->ContainsKey("method")) {
+        if (!System::Int32::TryParse(args["method"], method))
+            method = 1;
+    }
     int interval = 1000;
     if (args->ContainsKey("interval"))
     {
@@ -67,6 +72,13 @@ int start_service(System::Collections::Specialized::StringDictionary^ args, Syst
         if (!System::Int32::TryParse(args["deletethreshold"], delete_device_threshold))
             delete_device_threshold = 500;
     }
+    LogIt("Dump paramers:");
+    LogIt(System::String::Format("method={0}", method));
+    LogIt(System::String::Format("interval={0}ms", interval));
+    LogIt(System::String::Format("listinterval={0}seconds", list_device_interval));
+    LogIt(System::String::Format("cpubusyinterval={0}ms", cpu_busy_interval));
+    LogIt(System::String::Format("cpuhreshold={0}%", cpu_threshold));
+    LogIt(System::String::Format("deletethreshold={0}ms", delete_device_threshold));
     while (!done) {
         cpu_usage = pc->NextValue();
         LogIt(System::String::Format("CPU usage is {0:F2}%", cpu_usage));
@@ -91,8 +103,15 @@ int start_service(System::Collections::Specialized::StringDictionary^ args, Syst
         if (devices->Count > 0) {
             String^ d = (String^)devices[0];
             System::DateTime t0 = System::DateTime::Now;
-            if (removeDeviceByInstanceId(d) == NOERROR) {
-                devices->Remove(d);
+            if (method == 1) {
+                if (removeDeviceByInstanceId(d) == NOERROR) {
+                    devices->Remove(d);
+                }
+            }
+            else if (method == 2) {
+                if (removeDeviceByInstanceId2(d) == NOERROR) {
+                    devices->Remove(d);
+                }
             }
             System::TimeSpan ts = System::DateTime::Now - t0;
             LogIt(System::String::Format("It took {0} ms to remove the device.", ts.TotalMilliseconds));

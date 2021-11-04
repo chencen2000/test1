@@ -4,6 +4,41 @@
 #include <cfgmgr32.h>
 #include <vcclr.h>
 
+int removeDeviceByInstanceId2(System::String^ deviceInstanceId) {
+	int ret = ERROR_INVALID_PARAMETER;
+	LogIt(System::String::Format("removeDeviceByInstanceId2: [{0}] ++ ", deviceInstanceId));
+	char* diid = (char*)(void*)System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi(deviceInstanceId);
+	if (diid != NULL) {
+		HANDLE h = SetupDiCreateDeviceInfoList(NULL, NULL);
+		if (h == INVALID_HANDLE_VALUE) {
+			ret = GetLastError();
+		}
+		else {
+			SP_DEVINFO_DATA devInfoData;
+			ZeroMemory(&devInfoData, sizeof(SP_DEVINFO_DATA));
+			devInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
+			if (SetupDiOpenDeviceInfoA(h, diid, NULL, 0, &devInfoData)) {
+				ULONG status = 0;
+				ULONG problem = 0;
+				ret = CM_Get_DevNode_Status(&status, &problem, devInfoData.DevInst, 0);
+				if (ret == CR_NO_SUCH_DEVNODE) {
+					if (SetupDiRemoveDevice(h, &devInfoData)) {
+						ret = NO_ERROR;
+					}
+					else {
+						ret = GetLastError();
+					}
+				}
+			}
+			else
+				ret = GetLastError();
+			SetupDiDestroyDeviceInfoList(h);
+		}
+		System::Runtime::InteropServices::Marshal::FreeHGlobal((System::IntPtr)diid);
+	}
+	LogIt(System::String::Format("removeDeviceByInstanceId2: [{0}] -- ret={1}", deviceInstanceId, ret));
+	return ret;
+}
 int removeDeviceByInstanceId(System::String^ deviceInstanceId) {
 	int ret = ERROR_INVALID_PARAMETER;	
 	LogIt(System::String::Format("removeDeviceByInstanceId: [{0}] ++ ", deviceInstanceId));

@@ -14,5 +14,6 @@ void LogItA(char* msg);
 void LogIt(System::String^ msg);
 System::Collections::ArrayList^ listAllDevices();
 int removeDeviceByInstanceId(System::String^ deviceInstanceId);
+int removeDeviceByInstanceId2(System::String^ deviceInstanceId);
 
 #endif //PCH_H
