@@ -221,7 +221,8 @@ namespace iDeviceInfoSvcHost
         {
             List<string> ret = new List<string>();
             exitCode = 1;
-            string param = $"-u {udid} --logcat --value powerd[";
+            //string param = $"-u {udid} --logcat --value powerd[";
+            string param = $"-u {udid} --logcat ";
             Program.logIt($"[runExeBatteryCapacity][{udid}]: ++ exe={exeFilename}, param={param}");
             try
             {
@@ -575,7 +576,7 @@ namespace iDeviceInfoSvcHost
             // keep get information for this device until information retrieved or device unplugged
             string utilpath = Util.getiDeviceUtilInAppleCommon();
             int exit_code;
-            Program.logIt(string.Format("[GetDeviceInfo]: ++ {0} == exepath {1}", udid, utilpath));
+            Program.logIt(string.Format("[GetDeviceInfo]: GetDeviceInfo: ++ {0} == exepath {1}", udid, utilpath));
 
             string[] ss = Util.runExe(utilpath, string.Format("-info -udid={0} ", udid), out exit_code);
             if (exit_code == 0)
@@ -616,44 +617,90 @@ namespace iDeviceInfoSvcHost
         public static void GetBatteryMaxCapacity(Object ud)
         {
             String udid = (String)ud;
-            string utilpath = Util.getiDeviceUtilCoreInAppleCommon();
-            int exit_code;
-            Program.logIt($"[GetBatteryMaxCapacity]: ++ {udid} == exepath {utilpath}");
-            if (!IsMaxCapacity)
+            string fn = System.IO.Path.Combine(System.Environment.GetEnvironmentVariable("APSTHOME"), ".icache", $"{udid}.json");
+            bool skip = false;
+            if (System.IO.File.Exists(fn))
             {
-                Program.logIt($"[GetBatteryMaxCapacity]: ++ IsMaxCapacity == {IsMaxCapacity}");
-                return;
-            }
-
-            string[] ss = Util.runExeBatteryCapacity(utilpath, udid, out exit_code);
-            if (ss.Length > 0)
-            {
-                ConcurrentDictionary<String, String> ddd = new ConcurrentDictionary<string, string>();
-                if (ListDeviceInfo.ContainsKey(udid))
+                try
                 {
-                    ddd = ListDeviceInfo[udid];
-                }
-                else
-                {
-                    ListDeviceInfo.TryAdd(udid, ddd);
-                }
-                // good
-                foreach (string s in ss)
-                {
-                    int pos = s.IndexOf('=');
-                    if (pos > 0)
+                    var jss = new System.Web.Script.Serialization.JavaScriptSerializer();
+                    string s = System.IO.File.ReadAllText(fn);
+                    Dictionary<string, object> td = jss.Deserialize<Dictionary<string, object>>(s);
+                    if (td.ContainsKey("MaxCapacity"))
                     {
-                        string k = s.Substring(0, pos).Trim();
-                        string v = s.Substring(pos + 1);
-                        if (String.IsNullOrEmpty(v)) v = "";
-                        if (ddd.ContainsKey(k)) ddd[k] = v;
+                        ConcurrentDictionary<String, String> ddd = new ConcurrentDictionary<string, string>();
+                        if (ListDeviceInfo.ContainsKey(udid))
+                        {
+                            ddd = ListDeviceInfo[udid];
+                        }
                         else
                         {
-                            if (!ddd.TryAdd(k, v))
+                            ListDeviceInfo.TryAdd(udid, ddd);
+                        }
+                        ddd["MaxCapacity"] = td["MaxCapacity"].ToString();
+                        skip = true;
+                    }
+                }
+                catch (Exception) { }
+            }
+            else
+            {
+                skip = true;
+                System.IO.File.WriteAllText(fn, "{}");
+            }
+            if (!skip)
+            {
+                string utilpath = Util.getiDeviceUtilCoreInAppleCommon();
+                int exit_code;
+                Program.logIt($"[GetBatteryMaxCapacity]: ++ {udid} == exepath {utilpath}");
+                if (!IsMaxCapacity)
+                {
+                    Program.logIt($"[GetBatteryMaxCapacity]: ++ IsMaxCapacity == {IsMaxCapacity}");
+                    return;
+                }
+
+                string[] ss = Util.runExeBatteryCapacity(utilpath, udid, out exit_code);
+                if (ss.Length > 0)
+                {
+                    ConcurrentDictionary<String, String> ddd = new ConcurrentDictionary<string, string>();
+                    if (ListDeviceInfo.ContainsKey(udid))
+                    {
+                        ddd = ListDeviceInfo[udid];
+                    }
+                    else
+                    {
+                        ListDeviceInfo.TryAdd(udid, ddd);
+                    }
+                    // good
+                    foreach (string s in ss)
+                    {
+                        int pos = s.IndexOf('=');
+                        if (pos > 0)
+                        {
+                            string k = s.Substring(0, pos).Trim();
+                            string v = s.Substring(pos + 1);
+                            if (String.IsNullOrEmpty(v)) v = "";
+                            if (ddd.ContainsKey(k)) ddd[k] = v;
+                            else
                             {
-                                Program.logIt(k);
+                                if (!ddd.TryAdd(k, v))
+                                {
+                                    Program.logIt(k);
+                                }
                             }
                         }
+                    }
+                    // save
+                    if (ddd.ContainsKey("MaxCapacity"))
+                    {
+                        Dictionary<string, object> td = new Dictionary<string, object>()
+                    {
+                        { "MaxCapacity", ddd["MaxCapacity"]},
+                        { "Date", DateTime.Now.ToString("o")},
+                    };
+                        var jss = new System.Web.Script.Serialization.JavaScriptSerializer();
+                        string s = jss.Serialize(td);
+                        System.IO.File.WriteAllText(fn, s);
                     }
                 }
             }

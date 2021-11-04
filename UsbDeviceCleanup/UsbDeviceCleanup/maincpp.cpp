@@ -95,7 +95,7 @@ int start_service(System::Collections::Specialized::StringDictionary^ args, Syst
             continue;
         }
         if (cpu_usage > cpu_threshold) {
-            LogIt("CPU usage ({0:F2}%) is too high.");
+            LogIt(System::String::Format("CPU usage ({0:F2}%) is too high.", cpu_usage));
             if (interval < cpu_busy_interval)
                 interval = cpu_busy_interval;
             continue;
