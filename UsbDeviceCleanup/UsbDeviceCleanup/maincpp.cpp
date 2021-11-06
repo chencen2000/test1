@@ -1,5 +1,5 @@
 #include "pch.h"
-
+#include <atlstr.h>
 using namespace System;
 
 char* TAG = "FDUSBDEVICECLEANUP";
@@ -179,18 +179,11 @@ int main(array<System::String^>^ args)
     }
     else {
         // test
-        System::Collections::ArrayList^ devices = listAllDevices();
-        while (devices->Count > 0) {
-            String^ d = (String^)devices[0];
-            System::DateTime t0 = System::DateTime::Now;
-            if (removeDeviceByInstanceId(d) == NOERROR) {
-                devices->Remove(d);
-            }
-            System::TimeSpan ts = System::DateTime::Now - t0;
-            LogIt(System::String::Format("It took {0} ms to remove the device.", ts.TotalMilliseconds));
-
-
-        }
+		System::String^ ss = "Managed String";
+		CStringA cs = ss;
+		cs.AppendFormat("\nAppend CString.");
+		ss = gcnew System::String(cs);
+		System::Console::WriteLine(ss);
     }
     return ret;
 }
